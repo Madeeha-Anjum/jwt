@@ -23,3 +23,18 @@
    SELECT * FROM todos;
 
    ```
+
+## What is JWT?
+
+- auth method for secure communication between client and server
+- structure: header.payload.signature(encoded Base64)
+  - header: algorithm and token type
+
+   ```json
+   {
+       "alg": "HS256",
+       "typ": "JWT"
+   }
+   ```
+
+  - payload: data
