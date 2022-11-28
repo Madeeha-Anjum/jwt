@@ -1,0 +1,31 @@
+version: '3.9'
+
+services:
+  app:
+    working_dir: /usr/app
+    command: uvicorn main:app --host 0.0.0.0 --reload
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '8000:8000'
+    volumes:
+      # bind mount
+      - ./app:/usr/app
+      # connect volumes to sqlite 3
+      # connect the db folder on local machine to the db folder in the container
+      # - ./app/db/:/usr/app/db/ # not needed
+      # - tododatabase:/usr/app/db/ # read itself it looks at the anmed volume
+    restart: on-failure
+
+  sqlite:
+    image: 'nouchka/sqlite3'
+    stdin_open: true
+    tty: true
+    volumes:
+      # create a bind mount to the db folder /root/db is the default location of the db
+      - ./app/db/:/root/db/
+      # - tododatabase:/root/db/
+# volumes:
+#   #  named volume
+#   tododatabase:
