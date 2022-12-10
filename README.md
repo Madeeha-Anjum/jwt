@@ -1,4 +1,6 @@
-# JWT
+# Welcome to JWT 🚀🚀🚀
+
+JWT is a basic todo app that will implement JSON web token authentication in FASTAPI.
 
 ## Local development
 
@@ -6,7 +8,7 @@
 2. Run `docker-compose up` to start the server
 3. Open [http://localhost:8000](http://localhost:8000) to view it in the browser.
 4. Open [http://localhost:8000/docs](http://localhost:8000/docs) to view the API documentation.
-
+  
 ## Accessing the database
 
 1. Run `docker exec -it <container_name> bash`
@@ -15,7 +17,7 @@
 4. Run `.mode column` or `.mode table` or `.mode box` to see the columns
 5. For example setup a row in the todo table:
 
-   ```sql
+  ```sql
    sqlite3 todos.db
 
    INSERT into todos (title, description, priority, complete) VALUES ("Feed the dog", "He is hungary",5, false);
@@ -23,18 +25,3 @@
    SELECT * FROM todos;
 
    ```
-
-## What is JWT?
-
-- auth method for secure communication between client and server
-- structure: header.payload.signature(encoded Base64)
-  - header: algorithm and token type
-
-   ```json
-   {
-       "alg": "HS256",
-       "typ": "JWT"
-   }
-   ```
-
-  - payload: data

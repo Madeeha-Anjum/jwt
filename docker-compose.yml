@@ -26,6 +26,7 @@ services:
       # create a bind mount to the db folder /root/db is the default location of the db
       - ./app/db/:/root/db/
       # - tododatabase:/root/db/
+    restart: on-failure
 # volumes:
 #   #  named volume
 #   tododatabase:
