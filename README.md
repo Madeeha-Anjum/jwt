@@ -1,6 +1,6 @@
 # Welcome to JWT 🚀🚀🚀
 
-JWT is a basic todo app that will implement JSON web token authentication in FASTAPI.
+JWT is a basic todo app that will implement JSON web token authentication in FastAPI.
 
 ## Local development
 
@@ -20,7 +20,7 @@ JWT is a basic todo app that will implement JSON web token authentication in FAS
   ```sql
    sqlite3 todos.db
 
-   INSERT into todos (title, description, priority, complete) VALUES ("Feed the dog", "He is hungary",5, false);
+   INSERT into todos (title, description, priority, complete, owner_id) VALUES ("Feed the dog", "He is hungary",5, false, 1);
 
    SELECT * FROM todos;
 

@@ -1,40 +1,13 @@
-from fastapi import FastAPI, Depends, HTTPException, status
-from pydantic import BaseModel
 from typing import Optional
+from db import engine, SessionLocal
+from fastapi import FastAPI, Depends, HTTPException
 import models
-from passlib.context import CryptContext
-
-from sqlalchemy.orm import Session
-from db import SessionLocal, engine
-
-# for authentication
-# OAuth2PasswordBearer -> token and authorization platform
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-
-from datetime import datetime, timedelta
-from jose import jwt, JWTError
-
-SECRET_KEY = "a0d0c0b0a0d0c0b0a0d0c0b0a0d0c0b0"
-ALGORITHM = "HS256"
-
-
-class CreateUser(BaseModel):
-    username: str
-    email: Optional[str]
-    first_name: str
-    last_name: str
-    password: str
-
-
-bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-models.Base.metadata.create_all(bind=engine)  # create the databases
-
-
-oauth2_bearer = OAuth2PasswordBearer(tokenUrl="token")
-
+from pydantic import BaseModel, Field
+from auth import get_current_user, get_user_exception
 
 app = FastAPI()
+
+models.Base.metadata.create_all(bind=engine)
 
 
 def get_db():
@@ -45,105 +18,127 @@ def get_db():
         db.close()
 
 
-def get_password_hash(password: str):
-    return bcrypt_context.hash(password)
+class Todo(BaseModel):
+    title: str
+    description: Optional[str] = None
+    priority: int = Field(gt=0, lt=6, description="Priority must be between 1 and 5")
+    complete: bool
 
 
-def verify_password(plain_password: str, hashed_password: str):
-    # verify is the plain password is the same as the hashed password
-    return bcrypt_context.verify(plain_password, hashed_password)
+@app.get("/")
+async def read_all(db: SessionLocal = Depends(get_db)):
+    # the todos table
+    return db.query(models.Todos).all()
 
 
-def authenticate_user(username: str, password: str, db):
-    user = db.query(models.Users).filter(models.Users.username == username).first()
-
-    if not user:
-        return False
-    if not verify_password(password, user.hashed_password):
-        return False
-    else:
-        return user
-
-
-async def get_current_user(token: str = Depends(oauth2_bearer)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        user_id: int = payload.get("id")
-        if username is None or user_id is None:
-            raise get_user_exception()
-        return {"username": username, "id": user_id}
-    except JWTError:
+@app.post("/")
+async def create_todo(
+    todo: Todo,
+    user: dict = Depends(get_current_user),
+    db: SessionLocal = Depends(get_db),
+):
+    if user is None:
         raise get_user_exception()
 
+    todo_model = models.Todos()
+    todo_model.title = todo.title
+    todo_model.description = todo.description
+    todo_model.priority = todo.priority
+    todo_model.complete = todo.complete
+    todo_model.owner_id = user.get("id")
 
-@app.post("/create/user")
-async def create_user(user: CreateUser, db: Session = Depends(get_db)):
-    create_user_model = models.Users()
-    create_user_model.username = user.username
-    create_user_model.email = user.email
-    create_user_model.first_name = user.first_name
-    create_user_model.last_name = user.last_name
-
-    hash_password = get_password_hash(user.password)
-
-    create_user_model.hashed_password = hash_password
-
-    create_user_model.is_active = True
-
-    db.add(create_user_model)
+    db.add(todo_model)
     db.commit()
+    return todo_model
 
-    return db.query(models.Users).all()
 
-
-def create_access_token(
-    username: str, user_id: int, expires_delta: Optional[timedelta] = None
+@app.put("/{todo_id}")
+async def update_todo(
+    todo_id: int,
+    todo: Todo,
+    user: dict = Depends(get_current_user),
+    db: SessionLocal = Depends(get_db),
 ):
-    encode = {
-        "sub": username,
-        "id": user_id,
-    }
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+    if user is None:
+        raise get_user_exception()
+    todo_model = (
+        db.query(models.Todos)
+        .filter(models.Todos.id == todo_id)
+        .filter(models.Todos.owner_id == user.get("id"))
+        .first()
+    )
+
+    todo_model = models.Todos()
+    todo_model.title = todo.title
+    todo_model.description = todo.description
+    todo_model.priority = todo.priority
+    todo_model.complete = todo.complete
+    todo_model.owner_id = user.get("id")
+
+    db.add(todo_model)
+    db.commit()
+    return todo_model
+
+
+@app.delete("/{todo_id}")
+async def delete_todo(
+    todo_id: int,
+    user: dict = Depends(get_current_user),
+    db: SessionLocal = Depends(get_db),
+):
+    if user is None:
+        raise get_user_exception()
+    todo_model = (
+        db.query(models.Todos)
+        .filter(models.Todos.id == todo_id)
+        .filter(models.Todos.owner_id == user.get("id"))
+        .first()
+    )
+    if todo_model is None:
+        raise http_exception(status_code=404, detail="Todo not found")
+    db.delete(todo_model)
+    db.commit()
+    return todo_model
+
+
+@app.get("/todos/user")
+async def read_all_by_users(
+    user: dict = Depends(get_current_user), db: SessionLocal = Depends(get_db)
+):
+
+    if user is None:
+        raise get_user_exception()
+    # print(user)  encode = { "username": username, "id": user_id }
+    # dictionary user["id"] or user.get("id")
+    todo_model = (
+        db.query(models.Todos).filter(models.Todos.owner_id == user.get("id")).all()
+    )
+
+    return todo_model
+
+
+@app.post("/todo/{todo_id}")
+async def read_todos(
+    todo_id: int,
+    user: dict = Depends(get_current_user),
+    db: SessionLocal = Depends(get_db),
+):
+    print("hi")
+    if user is None:
+        raise get_user_exception()
+
+    todo_model = (
+        db.query(models.Todos)
+        .filter(models.Todos.owner_id == user.get("id"))
+        .filter(models.Todos.id == todo_id)
+        .first()
+    )
+
+    if todo_model is None:
+        return {"message": "Todo not found"}
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-
-    encode.update({"exp": expire})
-
-    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+        return todo_model
 
 
-@app.post("/token")
-async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
-):
-
-    user = authenticate_user(form_data.username, form_data.password, db)
-
-    if not user:
-        raise token_exception()
-
-    token_expires = timedelta(minutes=20)
-    token = create_access_token(user.username, user.id, expires_delta=token_expires)
-
-    return token
-
-
-# Exceptions
-def get_user_exception():
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    return credentials_exception
-
-
-def token_exception():
-    token_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Incorrect username or password",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    return token_exception
+def http_exception(status_code: int, detail: str):
+    return HTTPException(status_code=status_code, detail=detail)
