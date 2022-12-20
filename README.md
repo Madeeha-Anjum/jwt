@@ -38,13 +38,3 @@ JWT is a basic todo app that will implement JSON web token authentication in Fas
 
 - `docker compose up -d` to start the app, postgress, and pgadmin
 - to see the logs for the app `docker logs app_container -f -t`
-
-# how to do production deployment
-<!-- - `docker-compose -f docker-compose.prod.yml up -d --build` -->
-- set ENVIROMENT to Production on server
-- Create a network
-- docker network create app-tier
-- docker compose up --env-file ${ENV}.env --build
--  
-<!-- EVVIROMENT=production deocker compose up --env fiel -${ENVIRONMENT}.env -->
--
