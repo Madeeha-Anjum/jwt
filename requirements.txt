@@ -1,7 +1,15 @@
+# basics for the app
 fastapi>=0.78.0,<0.85.0
 pydantic>=1.8.0,<2.0.0
+pydantic[dotenv] >= 1.8.0
 uvicorn>=0.15.0,<0.16.0
+# for form data and file uploads
 python-multipart>=0.0.5,<0.1.0
+#  for database ORM
 SQLAlchemy>=1.4.0,<1.5.0
+# for connecting to postgres
+psycopg2-binary>=2.9.0,<3.0.0
+# for password hashing
 passlib >= 1.7.4
+#  for authentication aka JWT
 python-jose[cryptography] >= 3.3.0

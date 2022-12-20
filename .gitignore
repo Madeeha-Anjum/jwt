@@ -1,2 +1,6 @@
 # Byte-compiled / optimized / DLL files
 app/__pycache__/
+app/*/__pycache__/
+
+# all .env files
+*.env

@@ -1,11 +1,11 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, APIRouter
 from pydantic import BaseModel
 from typing import Optional
 import models
 from passlib.context import CryptContext
-
 from sqlalchemy.orm import Session
 from db import SessionLocal, engine
+
 
 # for authentication
 # OAuth2PasswordBearer -> token and authorization platform
@@ -31,13 +31,15 @@ bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 models.Base.metadata.create_all(bind=engine)  # create the databases
 
 
-app = FastAPI()
+router = APIRouter(
+    prefix="/auth", tags=["auth"], responses={404: {"user": "Not authenticated"}}
+)
 
 # oauth2_bearer reads the header "Authorization: Bearer <token>"
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="token")
 
 
-@app.get("/")
+@router.get("/")
 async def hello_world():
     return {"message": "Hello World"}
 
@@ -84,7 +86,7 @@ async def get_current_user(token: str = Depends(oauth2_bearer)):
         raise get_user_exception()
 
 
-@app.post("/create/user")
+@router.post("/create/user")
 async def create_user(user: CreateUser, db: Session = Depends(get_db)):
     create_user_model = models.Users()
     create_user_model.username = user.username
@@ -121,7 +123,7 @@ def create_access_token(
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-@app.post("/token")
+@router.post("/token")
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
