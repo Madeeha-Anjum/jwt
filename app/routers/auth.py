@@ -1,10 +1,10 @@
 from fastapi import Depends, HTTPException, status, APIRouter
-from pydantic import BaseModel
 from typing import Optional
 import models
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from db import SessionLocal, engine
+from pydantic import BaseModel
 
 
 # for authentication
@@ -16,14 +16,6 @@ from jose import jwt, JWTError
 
 SECRET_KEY = "a0d0c0b0a0d0c0b0a0d0c0b0a0d0c0b0"
 ALGORITHM = "HS256"
-
-
-class CreateUser(BaseModel):
-    username: str
-    email: Optional[str]
-    first_name: str
-    last_name: str
-    password: str
 
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -39,11 +31,6 @@ router = APIRouter(
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="token")
 
 
-@router.get("/")
-async def hello_world():
-    return {"message": "Hello World"}
-
-
 def get_db():
     try:
         db = SessionLocal()
@@ -52,13 +39,21 @@ def get_db():
         db.close()
 
 
-def get_password_hash(password: str):
-    return bcrypt_context.hash(password)
+class CreateUser(BaseModel):
+    username: str
+    email: Optional[str]
+    first_name: str
+    last_name: str
+    password: str
 
 
 def verify_password(plain_password: str, hashed_password: str):
     # verify is the plain password is the same as the hashed password
     return bcrypt_context.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password: str):
+    return bcrypt_context.hash(password)
 
 
 def authenticate_user(username: str, password: str, db):
@@ -86,7 +81,24 @@ async def get_current_user(token: str = Depends(oauth2_bearer)):
         raise get_user_exception()
 
 
-@router.post("/create/user")
+def create_access_token(
+    username: str, user_id: int, expires_delta: Optional[timedelta] = None
+):
+    encode = {
+        "sub": username,
+        "id": user_id,
+    }
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+
+    encode.update({"exp": expire})
+
+    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+@router.post("/create")
 async def create_user(user: CreateUser, db: Session = Depends(get_db)):
     create_user_model = models.Users()
     create_user_model.username = user.username
@@ -104,23 +116,6 @@ async def create_user(user: CreateUser, db: Session = Depends(get_db)):
     db.commit()
 
     return db.query(models.Users).all()
-
-
-def create_access_token(
-    username: str, user_id: int, expires_delta: Optional[timedelta] = None
-):
-    encode = {
-        "sub": username,
-        "id": user_id,
-    }
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-
-    encode.update({"exp": expire})
-
-    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 @router.post("/token")
