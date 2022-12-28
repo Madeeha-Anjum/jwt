@@ -8,7 +8,7 @@ from config import settings
 # Connect SQLAlchemy to the database
 # postgres_container is the name of the container in docker-compose.yml
 # 5432 is the default port for postgres
-SQLALCHEMY_DATABASE_URL = f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@postgres_container:5432/{settings.POSTGRES_DB}"
+SQLALCHEMY_DATABASE_URL = f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOSTNAME}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
 
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)

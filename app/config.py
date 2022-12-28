@@ -12,6 +12,8 @@ class Dev(Settings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
+    POSTGRES_HOSTNAME: str
+    POSTGRES_PORT: str
 
 
 class Prod(Settings):
