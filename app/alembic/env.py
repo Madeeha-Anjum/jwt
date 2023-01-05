@@ -5,10 +5,12 @@ from sqlalchemy import pool
 
 from alembic import context
 
-from app.config import settings
+import sys
 
+sys.path.append("...")
+import models
+from config import settings
 
-sqlalchemy_url = f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@postgres_container:5432/{settings.POSTGRES_DB}"
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -17,6 +19,9 @@ config.set_main_option(
     "sqlalchemy.url",
     f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOSTNAME}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}",
 )
+
+fileConfig(config.config_file_name)
+target_metadata = models.Base.metadata
 
 
 # Interpret the config file for Python logging.
@@ -28,7 +33,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+# target_metadata = None
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
