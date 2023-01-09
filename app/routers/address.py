@@ -29,5 +29,23 @@ class Address(Base):
 
 
 @router.post("/")
-async def create():
-    return
+async def create_address(
+    address: Address,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if user is None:
+        raise get_user_exception()
+
+    address_model = models.Address()
+    address_model.address1 = address.address1
+    address_model.address2 = address.address2
+    address_model.city = address.city
+    address_model.state = address.state
+    address_model.country = address.country
+    address_model.postalcode = address.postalcode
+
+    db.add(address_model)
+    db.flush()
+
+    return {"message": "Address created successfully"}
